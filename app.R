@@ -18,6 +18,7 @@ library(gridExtra)
 library(CausalImpact)
 library(data.table)
 library(stringr)
+library(foreach)
 ##devtools::install_version("MASS", "7.3-51.1")
 
 options(shiny.port = 7775)
@@ -68,6 +69,8 @@ ui <- fluidPage(
       
       uiOutput("choose_metrics"),
       
+      numericInput("limit", "Maximální počet řádek", value=100000),
+      
       hr(),
       
       actionButton(inputId = "propocitat",label = "Spočítat změnu", style="margin-bottom: 25px")
@@ -117,7 +120,7 @@ server <- function(input, output) {
   })
   
   output$choose_metrics <- renderUI({
-    selectInput("datasetMetrics", "Srovnávané metriky:", as.list(c("Imprese", "Clicks", "Positions", "CTR")))
+    selectInput("datasetMetrics", "Srovnávané metriky:", as.list(c("Imprese", "Clicks")))
   })
   
   
@@ -129,58 +132,94 @@ server <- function(input, output) {
       
       ## Nepotřebná validace 
       ## output$selected_var <- reactive(input$dataset)
-      
       ## Disable this a přidat tlačítko upravil jsem data o projektu(změny)
-      
       ## Zisk dat z konfigurátoru:
       sc_params_from <- input$timeFrom
       sc_params_change <- input$timeChange
       sc_params_to <- input$timeTo
       sc_params_property <- input$dataset
+      sc_params_limit <- input$limit
+      
+      ## Stahovat pouze pár URL Adres???
+      ## Dotat na dimenze
+      
+      ##sc_pages <- search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page"), searchType = "web", rowLimit = sc_params_limit)
+      ##sc_pages <-  search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("date", "page"), dimensionFilterExp = c("page~~/proteiny/"), searchType = "web", rowLimit = sc_params_limit)
+      
+      ## GET DATA SKUPINA A
+      promena_temp <- unlist(strsplit(x =input$skupinaA,split = '[\r\n]' ))
+      vstupni_temp <- data.frame("URL"= promena_temp)
+      adresare_temp <- input$exact1
+      
+      if(adresare_temp == TRUE){
+        
+        x <- foreach(i=vstupni_temp$URL) %do% search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page","date"), dimensionFilterExp = c(paste("page~~", i, "", sep="")), searchType = "web", rowLimit = sc_params_limit)
+        temp <- as.data.frame(do.call("rbind", x), stringsAsFactors = FALSE)
+        ##temp= aggregate(. ~ page, temp, sum, na.rm=TRUE, na.action="na.pass")
+        
+      }else{
+        
+        x <- foreach(i=vstupni_temp$URL) %do% search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page","date"), dimensionFilterExp = c(paste("page==", i, "", sep="")), searchType = "web", rowLimit = sc_params_limit)
+        temp <- as.data.frame(do.call("rbind", x), stringsAsFactors = FALSE)
+        ##temp= aggregate(. ~ page, temp, sum, na.rm=TRUE, na.action="na.pass")
+        
+      }
+      
+      sc_skupina_a <- temp
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       
       
       ## Stáhnutí overview dat:
-      sc_all <- search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page", "date"), searchType = "web", rowLimit = 100000)
+      sc_all <- search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page", "date"), searchType = "web", rowLimit = sc_params_limit)
       ## TODO: Validace existence LPs
       
       ## Getnutí LPs, které jsou ve skupině A
-      pages_temp = sc_all
-      pages_temp$impressions = NULL;
-      pages_temp$clicks = NULL;
-      pages_temp$ctr = NULL;
-      pages_temp$position = NULL;
+      #pages_temp = sc_all
+      #pages_temp$impressions = NULL;
+      #pages_temp$clicks = NULL;
+      #pages_temp$ctr = NULL;
+      #pages_temp$position = NULL;
       
-      pages_temp = aggregate(. ~ page, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
-      pages_temp["obsahuje_url"] <- NA
+      #pages_temp = aggregate(. ~ page, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
+      #pages_temp["obsahuje_url"] <- NA
       
       ## Include te hlavni URL
       
-      promena_temp <- unlist(strsplit(x =input$skupinaA,split = '[\r\n]' ))
+      #promena_temp <- unlist(strsplit(x =input$skupinaA,split = '[\r\n]' ))
       
-      vstupni_temp <- data.frame("URL"= promena_temp)
+      #vstupni_temp <- data.frame("URL"= promena_temp)
       
-      adresare_temp <- input$exact1
-      if(adresare_temp == TRUE){
-        vstupni_temp$URL <- paste(".*", vstupni_temp$URL, ".*", sep="")
-      }else{
-        vstupni_temp$URL <- paste(vstupni_temp$URL, sep="")
-      }
+      #adresare_temp <- input$exact1
+      #if(adresare_temp == TRUE){
+      #  vstupni_temp$URL <- paste(".*", vstupni_temp$URL, ".*", sep="")
+      #}else{
+      #  vstupni_temp$URL <- paste(vstupni_temp$URL, sep="")
+      #}
       
       
-      pages_temp$obsahuje_url <- str_match(pages_temp$page, vstupni_temp$URL)
+      #pages_temp$obsahuje_url <- str_match(pages_temp$page, vstupni_temp$URL)
       
-      pages_temp$date <- NULL
-      pages_temp$page <- NULL
-      pages_temp$data <- 1
+      #pages_temp$date <- NULL
+      #pages_temp$page <- NULL
+      #pages_temp$data <- 1
       
-      pages_temp = aggregate(. ~ obsahuje_url, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
-      pages_temp$data <- NULL
+      #pages_temp = aggregate(. ~ obsahuje_url, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
+      #pages_temp$data <- NULL
       
-      sc_skupina_a <- sc_all[sc_all$page %in% pages_temp$obsahuje_url,]
+      #sc_skupina_a <- sc_all[sc_all$page %in% pages_temp$obsahuje_url,]
       
-      pages_temp <- NULL
-      vstupni_temp <- NULL
-      promena_temp <- NULL
+      #pages_temp <- NULL
+      #vstupni_temp <- NULL
+      #promena_temp <- NULL
       
       ##sc_skupina_a <- sc_all[sc_all$page == input$skupinaA,]
       
@@ -321,11 +360,11 @@ server <- function(input, output) {
       post_start <- as.POSIXlt(post_start)
       
       
-      preend <- difftime(strptime(sc_params_change, format="%Y-%m-%d"),strptime(sc_params_from, format="%Y-%m-%d"),units="days")
-      preend <- as.double(preend)
+      ##preend <- difftime(strptime(sc_params_change, format="%Y-%m-%d"),strptime(sc_params_from, format="%Y-%m-%d"),units="days")
+      ##preend <- as.double(preend)
       
-      postend <- preend + difftime(strptime(sc_params_to, format="%Y-%m-%d"),strptime(sc_params_change, format="%Y-%m-%d"),units="days")
-      postend <- as.double(postend)
+      ##postend <- preend + difftime(strptime(sc_params_to, format="%Y-%m-%d"),strptime(sc_params_change, format="%Y-%m-%d"),units="days")
+      ##postend <- as.double(postend)
       
       ##pre.period <- c(1,preend)
       ##post.period <- c(preend + 1,postend)
@@ -351,6 +390,7 @@ server <- function(input, output) {
         summary(impact, "report")
       })
       
+      ## Pročistit Impact
       shinyjs::enable("propocitat")
       
     }
