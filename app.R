@@ -167,6 +167,11 @@ server <- function(input, output) {
       
       sc_skupina_a <- temp
       
+      promena_temp <- NULL
+      vstupni_temp <- NULL
+      adresare_temp <- NULL
+      x <- NULL
+      temp <- NULL
       
       
       
@@ -179,7 +184,7 @@ server <- function(input, output) {
       
       
       ## Stáhnutí overview dat:
-      sc_all <- search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page", "date"), searchType = "web", rowLimit = sc_params_limit)
+      ##sc_all <- search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page", "date"), searchType = "web", rowLimit = sc_params_limit)
       ## TODO: Validace existence LPs
       
       ## Getnutí LPs, které jsou ve skupině A
@@ -263,45 +268,72 @@ server <- function(input, output) {
       
       ####### Skupina B #########
       
+      ## GET DATA SKUPINA N
+      promena_temp <- unlist(strsplit(x =input$skupinaB,split = '[\r\n]' ))
+      vstupni_temp <- data.frame("URL"= promena_temp)
+      adresare_temp <- input$exact2
+      
+      if(adresare_temp == TRUE){
+        
+        x <- foreach(i=vstupni_temp$URL) %do% search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page","date"), dimensionFilterExp = c(paste("page~~", i, "", sep="")), searchType = "web", rowLimit = sc_params_limit)
+        temp <- as.data.frame(do.call("rbind", x), stringsAsFactors = FALSE)
+        ##temp= aggregate(. ~ page, temp, sum, na.rm=TRUE, na.action="na.pass")
+        
+      }else{
+        
+        x <- foreach(i=vstupni_temp$URL) %do% search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page","date"), dimensionFilterExp = c(paste("page==", i, "", sep="")), searchType = "web", rowLimit = sc_params_limit)
+        temp <- as.data.frame(do.call("rbind", x), stringsAsFactors = FALSE)
+        ##temp= aggregate(. ~ page, temp, sum, na.rm=TRUE, na.action="na.pass")
+        
+      }
+      
+      sc_skupina_b <- temp
+      
+      promena_temp <- NULL
+      vstupni_temp <- NULL
+      adresare_temp <- NULL
+      x <- NULL
+      temp <- NULL
+      
       ##indices <- which(sc_all$page == input$skupinaB)
       ##sc_skupina_b <- sc_all[indices, ]
       
       ## Getnutí LPs, které jsou ve skupině A
-      pages_temp = sc_all
-      pages_temp$impressions = NULL;
-      pages_temp$clicks = NULL;
-      pages_temp$ctr = NULL;
-      pages_temp$position = NULL;
+      #pages_temp = sc_all
+      #pages_temp$impressions = NULL;
+      #pages_temp$clicks = NULL;
+      #pages_temp$ctr = NULL;
+      #pages_temp$position = NULL;
       
-      pages_temp = aggregate(. ~ page, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
-      pages_temp["obsahuje_url"] <- NA
+      #pages_temp = aggregate(. ~ page, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
+      #pages_temp["obsahuje_url"] <- NA
       
       ## Include te hlavni URL
-      promena_temp <- unlist(strsplit(x =input$skupinaB,split = '[\r\n]' ))
+      #promena_temp <- unlist(strsplit(x =input$skupinaB,split = '[\r\n]' ))
       
-      vstupni_temp <- data.frame("URL"= promena_temp)
+      #vstupni_temp <- data.frame("URL"= promena_temp)
       
-      adresare_temp <- input$exact2
-      if(adresare_temp == TRUE){
-        vstupni_temp$URL <- paste(".*", vstupni_temp$URL, ".*", sep="")
-      }else{
-        vstupni_temp$URL <- paste(vstupni_temp$URL, sep="")
-      }
+      #adresare_temp <- input$exact2
+      #if(adresare_temp == TRUE){
+      #  vstupni_temp$URL <- paste(".*", vstupni_temp$URL, ".*", sep="")
+      #}else{
+      #  vstupni_temp$URL <- paste(vstupni_temp$URL, sep="")
+      #}
       
-      pages_temp$obsahuje_url <- str_match(pages_temp$page, vstupni_temp$URL)
+      #pages_temp$obsahuje_url <- str_match(pages_temp$page, vstupni_temp$URL)
       
-      pages_temp$date <- NULL
-      pages_temp$page <- NULL
-      pages_temp$data <- 1
+      #pages_temp$date <- NULL
+      #pages_temp$page <- NULL
+      #pages_temp$data <- 1
       
-      pages_temp = aggregate(. ~ obsahuje_url, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
-      pages_temp$data <- NULL
+      #pages_temp = aggregate(. ~ obsahuje_url, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
+      #pages_temp$data <- NULL
       
-      sc_skupina_b <- sc_all[sc_all$page %in% pages_temp$obsahuje_url,]
+      #sc_skupina_b <- sc_all[sc_all$page %in% pages_temp$obsahuje_url,]
       
-      pages_temp <- NULL
-      vstupni_temp <- NULL
-      promena_temp <- NULL
+      #pages_temp <- NULL
+      #vstupni_temp <- NULL
+      #promena_temp <- NULL
       
       ##sc_skupina_b <- sc_all[sc_all$page == input$skupinaB,]
       
