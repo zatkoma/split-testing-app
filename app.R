@@ -1,12 +1,13 @@
 #
-# ShinyApp - Console Casual Impact
+# SEO Split Testing Evaluation
 #
+# By: Martin Žatkovič
+# Last update: 10.6.2019
+# Repo:
 #
 
-##Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
 
-
-
+# Libraries
 library(shiny)
 library(googleAuthR)
 library(searchConsoleR)
@@ -19,22 +20,23 @@ library(CausalImpact)
 library(data.table)
 library(stringr)
 library(foreach)
-##devtools::install_version("MASS", "7.3-51.1")
 
+# Server Setings
 options(shiny.port = 7775)
 options(shiny.host = "127.0.0.1")
 
-# Define UI for application that draws a histogram
+# UI
 ui <- fluidPage(
   
   shinyjs::useShinyjs(),
   
-  verbatimTextOutput("console_text"),
+  # For debugging
+  # verbatimTextOutput("console_text"),
   
-  # Název aplikace
-  titlePanel("SEO Testing - Explorer"),
+  # App Title
+  titlePanel("SEO Split Testing Evaluation"),
   
-  # Úvodní slůvko
+  # Text before
   p("Tato aplikace byla vytořena, abyste mohli jednoduše pracovat s vyhodnocováním testů v SEO. Její základní výhody jsou v tom, že 
     se může připojit na Google Search Consoli, odkud tahá data a ty porovnává mezi sebou. Testování v SEO vychází z toho, že si vyberete
     dataset URL adres (skupina A), kde nic nezměníte a vše necháte tak jak má být. A následně dataset URL adres (skupina B), kde provedete
@@ -42,7 +44,7 @@ ui <- fluidPage(
   
   hr(),
   
-  # Sidebar with a slider input for number of bins 
+  # Sidebar
   sidebarLayout(
     
     sidebarPanel(
@@ -77,7 +79,7 @@ ui <- fluidPage(
       
     ),
     
-    # Show a plot of the generated distribution
+    # Main
     mainPanel(
       
       
@@ -93,60 +95,58 @@ ui <- fluidPage(
   )
   )
 
-# Define server logic required to draw a histogram
+# Backend
 server <- function(input, output) {
   
   shinyjs::disable("propocitat")
   
-  ## Testing výpis:
+  ## What is this?
   info <- reactiveValues()
   
-  ## Přihlášení do GSC:
+  ## Login to GSC
   observeEvent(input$prihlasitse,{
     
+    ## Create new user and get websites
     scr_auth(new_user = TRUE)
     scr_websites <- list_websites()
     
-    info$account_list <- list_websites()
+      ## TODO: Print just verified websites
+      ## Try catch or what?
+      info$account_list <- list_websites()
     
+    ## Disable login and enable app
     shinyjs::disable("prihlasitse")
     shinyjs::enable("propocitat")
     
   })
   
-  ## Inicialiazace webů po přihlášení
+  ## Render websites
   output$choose_dataset <- renderUI({
     selectInput("dataset", "Dostupné weby:", as.list(info$account_list[1]))
   })
   
+  ## Render variables to count
   output$choose_metrics <- renderUI({
     selectInput("datasetMetrics", "Srovnávané metriky:", as.list(c("Imprese", "Clicks")))
   })
   
   
-  ## Propočítávání dat
+  ## Evaluation
   observeEvent(input$propocitat,{
     {
       
       shinyjs::disable("propocitat")
       
-      ## Nepotřebná validace 
-      ## output$selected_var <- reactive(input$dataset)
-      ## Disable this a přidat tlačítko upravil jsem data o projektu(změny)
-      ## Zisk dat z konfigurátoru:
+      ## Get informations from inputs
       sc_params_from <- input$timeFrom
       sc_params_change <- input$timeChange
       sc_params_to <- input$timeTo
       sc_params_property <- input$dataset
       sc_params_limit <- input$limit
       
-      ## Stahovat pouze pár URL Adres???
-      ## Dotat na dimenze
-      
-      ##sc_pages <- search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page"), searchType = "web", rowLimit = sc_params_limit)
-      ##sc_pages <-  search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("date", "page"), dimensionFilterExp = c("page~~/proteiny/"), searchType = "web", rowLimit = sc_params_limit)
-      
-      ## GET DATA SKUPINA A
+      ####
+      ## GET DATA GROUP A
+      ####
       promena_temp <- unlist(strsplit(x =input$skupinaA,split = '[\r\n]' ))
       vstupni_temp <- data.frame("URL"= promena_temp)
       adresare_temp <- input$exact1
@@ -155,79 +155,25 @@ server <- function(input, output) {
         
         x <- foreach(i=vstupni_temp$URL) %do% search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page","date"), dimensionFilterExp = c(paste("page~~", i, "", sep="")), searchType = "web", rowLimit = sc_params_limit)
         temp <- as.data.frame(do.call("rbind", x), stringsAsFactors = FALSE)
-        ##temp= aggregate(. ~ page, temp, sum, na.rm=TRUE, na.action="na.pass")
         
       }else{
         
         x <- foreach(i=vstupni_temp$URL) %do% search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page","date"), dimensionFilterExp = c(paste("page==", i, "", sep="")), searchType = "web", rowLimit = sc_params_limit)
         temp <- as.data.frame(do.call("rbind", x), stringsAsFactors = FALSE)
-        ##temp= aggregate(. ~ page, temp, sum, na.rm=TRUE, na.action="na.pass")
         
       }
       
+      ## Set sc_skupina_a
       sc_skupina_a <- temp
       
+      ## Cleaning is caring
       promena_temp <- NULL
       vstupni_temp <- NULL
       adresare_temp <- NULL
       x <- NULL
       temp <- NULL
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      ## Stáhnutí overview dat:
-      ##sc_all <- search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page", "date"), searchType = "web", rowLimit = sc_params_limit)
-      ## TODO: Validace existence LPs
-      
-      ## Getnutí LPs, které jsou ve skupině A
-      #pages_temp = sc_all
-      #pages_temp$impressions = NULL;
-      #pages_temp$clicks = NULL;
-      #pages_temp$ctr = NULL;
-      #pages_temp$position = NULL;
-      
-      #pages_temp = aggregate(. ~ page, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
-      #pages_temp["obsahuje_url"] <- NA
-      
-      ## Include te hlavni URL
-      
-      #promena_temp <- unlist(strsplit(x =input$skupinaA,split = '[\r\n]' ))
-      
-      #vstupni_temp <- data.frame("URL"= promena_temp)
-      
-      #adresare_temp <- input$exact1
-      #if(adresare_temp == TRUE){
-      #  vstupni_temp$URL <- paste(".*", vstupni_temp$URL, ".*", sep="")
-      #}else{
-      #  vstupni_temp$URL <- paste(vstupni_temp$URL, sep="")
-      #}
-      
-      
-      #pages_temp$obsahuje_url <- str_match(pages_temp$page, vstupni_temp$URL)
-      
-      #pages_temp$date <- NULL
-      #pages_temp$page <- NULL
-      #pages_temp$data <- 1
-      
-      #pages_temp = aggregate(. ~ obsahuje_url, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
-      #pages_temp$data <- NULL
-      
-      #sc_skupina_a <- sc_all[sc_all$page %in% pages_temp$obsahuje_url,]
-      
-      #pages_temp <- NULL
-      #vstupni_temp <- NULL
-      #promena_temp <- NULL
-      
-      ##sc_skupina_a <- sc_all[sc_all$page == input$skupinaA,]
-      
+
+      ## Prepare GROUP A for Impact.
       if(input$datasetMetrics == "Imprese"){
         
         sc_skupina_a$page = NULL;
@@ -266,9 +212,9 @@ server <- function(input, output) {
       sc_skupina_a <- aggregate(. ~date, data=sc_skupina_a, sum, na.rm=TRUE)
       
       
-      ####### Skupina B #########
-      
-      ## GET DATA SKUPINA N
+      ####
+      ## GET DATA GROUP B
+      ####
       promena_temp <- unlist(strsplit(x =input$skupinaB,split = '[\r\n]' ))
       vstupni_temp <- data.frame("URL"= promena_temp)
       adresare_temp <- input$exact2
@@ -277,65 +223,24 @@ server <- function(input, output) {
         
         x <- foreach(i=vstupni_temp$URL) %do% search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page","date"), dimensionFilterExp = c(paste("page~~", i, "", sep="")), searchType = "web", rowLimit = sc_params_limit)
         temp <- as.data.frame(do.call("rbind", x), stringsAsFactors = FALSE)
-        ##temp= aggregate(. ~ page, temp, sum, na.rm=TRUE, na.action="na.pass")
         
       }else{
         
         x <- foreach(i=vstupni_temp$URL) %do% search_analytics(sc_params_property, sc_params_from, sc_params_to, dimensions = c("page","date"), dimensionFilterExp = c(paste("page==", i, "", sep="")), searchType = "web", rowLimit = sc_params_limit)
         temp <- as.data.frame(do.call("rbind", x), stringsAsFactors = FALSE)
-        ##temp= aggregate(. ~ page, temp, sum, na.rm=TRUE, na.action="na.pass")
         
       }
       
+      ## Set sc_skupina_b
       sc_skupina_b <- temp
       
+      ## Cleaning is caring
       promena_temp <- NULL
       vstupni_temp <- NULL
       adresare_temp <- NULL
       x <- NULL
       temp <- NULL
       
-      ##indices <- which(sc_all$page == input$skupinaB)
-      ##sc_skupina_b <- sc_all[indices, ]
-      
-      ## Getnutí LPs, které jsou ve skupině A
-      #pages_temp = sc_all
-      #pages_temp$impressions = NULL;
-      #pages_temp$clicks = NULL;
-      #pages_temp$ctr = NULL;
-      #pages_temp$position = NULL;
-      
-      #pages_temp = aggregate(. ~ page, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
-      #pages_temp["obsahuje_url"] <- NA
-      
-      ## Include te hlavni URL
-      #promena_temp <- unlist(strsplit(x =input$skupinaB,split = '[\r\n]' ))
-      
-      #vstupni_temp <- data.frame("URL"= promena_temp)
-      
-      #adresare_temp <- input$exact2
-      #if(adresare_temp == TRUE){
-      #  vstupni_temp$URL <- paste(".*", vstupni_temp$URL, ".*", sep="")
-      #}else{
-      #  vstupni_temp$URL <- paste(vstupni_temp$URL, sep="")
-      #}
-      
-      #pages_temp$obsahuje_url <- str_match(pages_temp$page, vstupni_temp$URL)
-      
-      #pages_temp$date <- NULL
-      #pages_temp$page <- NULL
-      #pages_temp$data <- 1
-      
-      #pages_temp = aggregate(. ~ obsahuje_url, pages_temp, sum, na.rm=TRUE, na.action="na.pass")
-      #pages_temp$data <- NULL
-      
-      #sc_skupina_b <- sc_all[sc_all$page %in% pages_temp$obsahuje_url,]
-      
-      #pages_temp <- NULL
-      #vstupni_temp <- NULL
-      #promena_temp <- NULL
-      
-      ##sc_skupina_b <- sc_all[sc_all$page == input$skupinaB,]
       
       if(input$datasetMetrics == "Imprese"){
         
@@ -373,16 +278,17 @@ server <- function(input, output) {
       
       sc_skupina_b <- aggregate(. ~date, data=sc_skupina_b, sum, na.rm=TRUE)
       
+      
+      #### Set impact ####
+      
+      ## Merge GROUPs
       dataImpact <- merge(sc_skupina_b, sc_skupina_a, by="date", all = T)
       dataImpact[is.na(dataImpact)] <- 0
-      ##dataImpact <- aggregate(. ~date, data=dataImpact, sum, na.rm=TRUE)
-      ##dataImpact <- mean(dataImpact, na.rm=TRUE)
-      
       names(dataImpact)[2] = "y"
       names(dataImpact)[3] = "x1"
       
       
-      
+      ## Magic whit dates
       pre_start <- strptime(sc_params_from, format="%Y-%m-%d")
       pre_end <- strptime(sc_params_change, format="%Y-%m-%d")
       
@@ -390,26 +296,14 @@ server <- function(input, output) {
       post_end <- strptime(sc_params_to, format="%Y-%m-%d")
       
       post_start <- as.POSIXlt(post_start)
-      
-      
-      ##preend <- difftime(strptime(sc_params_change, format="%Y-%m-%d"),strptime(sc_params_from, format="%Y-%m-%d"),units="days")
-      ##preend <- as.double(preend)
-      
-      ##postend <- preend + difftime(strptime(sc_params_to, format="%Y-%m-%d"),strptime(sc_params_change, format="%Y-%m-%d"),units="days")
-      ##postend <- as.double(postend)
-      
-      ##pre.period <- c(1,preend)
-      ##post.period <- c(preend + 1,postend)
-      
       pre.period <- as.Date(c(pre_start,pre_end))
       post.period <- as.Date(c(post_start,post_end))
-      
-      
       dataImpact = zoo(dataImpact[, -1], dataImpact$date)
       
-      
+      ## CausalImpact
       impact <- CausalImpact(dataImpact, pre.period, post.period)
       
+      ## Print
       output$firstPlot <- renderPlot({
         plot(impact)
       })
@@ -427,21 +321,6 @@ server <- function(input, output) {
       
     }
   })
-  
-  
-  observeEvent(input$exportovat,{
-    
-    
-    ## Zisk dat z konfigurátoru:
-    sc_params_from <- input$timeFrom
-    sc_params_to <- input$timeTo
-    sc_params_property <- input$dataset
-    
-    sc_all <- search_analytics(sc_params_property, sc_params_from, sc_params_to, searchType = "web")
-    
-    
-  }
-  )
   
 }
 
