@@ -3,7 +3,24 @@ Změna titulků, obsahu, interního prolinkování, příprava textů a další 
 
 ## Jak aplikace funguje?
 
+Aplikace se napojí na váš GSC account (dáváte ji povolení) a následně si stáhne dva datasety, které ji určíte na základě URL adres na vstupu. Následně tyto dva datasety porovná pomocí metody CausalIpact a řekne, jestli upravené stránky fungují lépe či nikoliv.
+
 ## Jak aplikaci nainstalovat?
+
+instalace je jednoduchá, stačí vložit do příkazové řádky v RStudiu následující kódy:
+
+- install.packages("shiny")
+- install.packages("googleAuthR")
+- install.packages("searchConsoleR")
+- install.packages("shinyjs")
+- install.packages("shinyTime")
+- install.packages("chron")
+- install.packages("ggplot2")
+- install.packages("gridExtra")
+- install.packages("CausalImpact")
+- install.packages("data.table")
+- install.packages("stringr")
+- install.packages("foreach")
 
 ### Co potřebujete?
 
@@ -17,7 +34,7 @@ Změna titulků, obsahu, interního prolinkování, příprava textů a další 
 - Stáhněte si tento repozitář (v .zip)
 - Otevřete jej do libovolné složky
 - Otevřete projekt
-- Spusťe instalační příkaz na balíčky (nalezne v setup.r)
+- Spusťe instalační příkaz na balíčky
 - Spusťe aplikaci
 
 ### Informace pro R znalé:
