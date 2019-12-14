@@ -107,7 +107,7 @@ server <- function(input, output) {
   observeEvent(input$prihlasitse,{
     
     ## Create new user and get websites
-    scr_auth(new_user = TRUE)
+    scr_auth()
     scr_websites <- list_websites()
     
       ## TODO: Print just verified websites
