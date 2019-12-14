@@ -2,7 +2,7 @@
 # SEO Split Testing Evaluation
 #
 # By: Martin Žatkovič
-# Last update: 10.6.2019
+# Last update: 14.12.2019
 # Repo:
 #
 
@@ -34,13 +34,17 @@ ui <- fluidPage(
   # verbatimTextOutput("console_text"),
   
   # App Title
-  titlePanel("SEO Split Testing Evaluation"),
+  titlePanel("SEO Split Testing Evaluation App"),
   
   # Text before
-  p("Tato aplikace byla vytořena, abyste mohli jednoduše pracovat s vyhodnocováním testů v SEO. Její základní výhody jsou v tom, že 
-    se může připojit na Google Search Consoli, odkud tahá data a ty porovnává mezi sebou. Testování v SEO vychází z toho, že si vyberete
-    dataset URL adres (skupina A), kde nic nezměníte a vše necháte tak jak má být. A následně dataset URL adres (skupina B), kde provedete
-    jisté změny a úpravy."),
+  
+  p("This application was created for easy evaluating SEO split tests. It works with your Google Search Console from were download data, which are in tests. For now, you can work with relative URLs and subfolders which are used for testing. If you want to evaluate changes, place control group to group A (nothing changed) and group with changes to group B after that the app will download data from your GSC and compare it with causal impact."),
+  
+  ## Translation in Czech.
+  ##p("Tato aplikace byla vytořena, abyste mohli jednoduše pracovat s vyhodnocováním testů v SEO. Její základní výhody jsou v tom, že 
+  ##  se může připojit na Google Search Consoli, odkud tahá data a ty porovnává mezi sebou. Testování v SEO vychází z toho, že si vyberete
+  ##  dataset URL adres (skupina A), kde nic nezměníte a vše necháte tak jak má být. A následně dataset URL adres (skupina B), kde provedete
+  ##  jisté změny a úpravy."),
   
   hr(),
   
@@ -49,33 +53,33 @@ ui <- fluidPage(
     
     sidebarPanel(
       
-      actionButton(inputId = "prihlasitse",label = "Přihlaste se do GSC", style="margin-bottom: 25px"),
+      actionButton(inputId = "prihlasitse",label = "Log in to GSC", style="margin-bottom: 25px"),
       
       uiOutput("choose_dataset"),
       
-      dateInput("timeFrom", "Sledované období od:", value = "2019-01-01"),
+      dateInput("timeFrom", "Date from:", value = "2019-01-01"),
       
-      dateInput("timeChange", "Datum provedení změny:", value = "2019-03-30"),
+      dateInput("timeChange", "Date of change:", value = "2019-03-30"),
       
-      dateInput("timeTo", "Sledované období do:", value = strptime(Sys.time(), format="%Y-%m-%d", tz="GMT") - (4 * 86400)),
+      dateInput("timeTo", "Date to:", value = strptime(Sys.time(), format="%Y-%m-%d", tz="GMT") - (4 * 86400)),
       
-      textAreaInput("skupinaA", "Skupina A (nezměněno)", value ="", width = "100%"),
+      textAreaInput("skupinaA", "Group A (control group)", value ="", width = "100%"),
       
-      checkboxInput("exact1", "Srovnávej adresáře", value = FALSE),
+      checkboxInput("exact1", "Work with subdirectory", value = FALSE),
       
-      textAreaInput("skupinaB", "Skupina B (změněno)", value ="", width = "100%"),
+      textAreaInput("skupinaB", "Group B (with change)", value ="", width = "100%"),
       
-      checkboxInput("exact2", "Srovnávej adresáře", value = FALSE),
+      checkboxInput("exact2", "Work with subdirectory", value = FALSE),
       
       hr(),
       
       uiOutput("choose_metrics"),
       
-      numericInput("limit", "Maximální počet řádek", value=100000),
+      numericInput("limit", "Maximum rows", value=100000),
       
       hr(),
       
-      actionButton(inputId = "propocitat",label = "Spočítat změnu", style="margin-bottom: 25px")
+      actionButton(inputId = "propocitat",label = "Count impact", style="margin-bottom: 25px")
       
     ),
     
@@ -83,13 +87,13 @@ ui <- fluidPage(
     mainPanel(
       
       
-      h3("Propočítaná data (odchylka od skupiny A)"),
+      h3("Results, graphs"),
       plotOutput("firstPlot"),
       
-      h3("Informace o dopadu"),
+      h3("Small report"),
       verbatimTextOutput("secondPlot"),
       
-      h3("Report"),
+      h3("Full report"),
       verbatimTextOutput("thirdPlot")
     )
   )
@@ -122,12 +126,12 @@ server <- function(input, output) {
   
   ## Render websites
   output$choose_dataset <- renderUI({
-    selectInput("dataset", "Dostupné weby:", as.list(info$account_list[1]))
+    selectInput("dataset", "Websites:", as.list(info$account_list[1]))
   })
   
   ## Render variables to count
   output$choose_metrics <- renderUI({
-    selectInput("datasetMetrics", "Srovnávané metriky:", as.list(c("Imprese", "Clicks")))
+    selectInput("datasetMetrics", "Metrics:", as.list(c("Impressions", "Clicks")))
   })
   
   
@@ -174,7 +178,7 @@ server <- function(input, output) {
       temp <- NULL
 
       ## Prepare GROUP A for Impact.
-      if(input$datasetMetrics == "Imprese"){
+      if(input$datasetMetrics == "Impressions"){
         
         sc_skupina_a$page = NULL;
         sc_skupina_a$clicks = NULL;
@@ -242,7 +246,7 @@ server <- function(input, output) {
       temp <- NULL
       
       
-      if(input$datasetMetrics == "Imprese"){
+      if(input$datasetMetrics == "Impressions"){
         
         sc_skupina_b$page = NULL;
         sc_skupina_b$clicks = NULL;
